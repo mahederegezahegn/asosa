@@ -1,0 +1,10 @@
+{
+  "name": "Remix CampusGate - Student Barcode Entry System",
+  "description": "High-throughput campus access control terminal and monitoring system with real-time barcode scanning, turnstile barrier simulation, anti-passback enforcement, and attendance telemetry.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

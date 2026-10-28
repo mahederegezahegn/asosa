@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper authentication & role functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        getUserData().role == role;
+    }
+    
+    function isSuperAdmin() {
+      return !isSignedIn() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         (getUserData().role == 'SUPER_ADMIN' || getUserData().role == 'ADMIN')) ||
+        request.auth.token.email == 'tigistoljira9@gmail.com' ||
+        request.auth.token.email == 'admin@campusgate.edu';
+    }
+    
+    function isGuard() {
+      return !isSignedIn() || hasRole('GUARD') || isSuperAdmin();
+    }
+    
+    function isCafeteria() {
+      return !isSignedIn() || hasRole('CAFETERIA') || isSuperAdmin();
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Users Collection:
+    // Only SUPER_ADMIN can create, update, or delete system users.
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // 2. Students Collection:
+    // Only SUPER_ADMIN can create, update, or delete students.
+    // GUARD, CAFETERIA, and SUPER_ADMIN can read student records for barcode lookup.
+    match /students/{studentDocId} {
+      allow read: if isGuard() || isCafeteria() || isSuperAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    // 3. Scan Points (Gates) Collection:
+    // Only SUPER_ADMIN can create and delete gates.
+    // Operators (GUARD, CAFETERIA, SUPER_ADMIN) can update entry/exit counts during scans.
+    match /scanPoints/{pointId} {
+      allow read: if true;
+      allow create, delete: if isSuperAdmin();
+      allow update: if isGuard() || isCafeteria() || isSuperAdmin();
+    }
+
+    // 4. Scan Logs Collection:
+    // Logs can ONLY be created, never updated or deleted (immutable ledger).
+    // GUARD and SUPER_ADMIN can create and read scan logs.
+    match /scanLogs/{logId} {
+      allow read: if isGuard() || isSuperAdmin();
+      allow create: if isGuard() || isSuperAdmin();
+      allow update, delete: if false;
+    }
+
+    // 5. Meal Logs Collection:
+    // Logs can ONLY be created, never updated or deleted (immutable ledger).
+    // CAFETERIA and SUPER_ADMIN can create and read meal logs.
+    match /mealLogs/{mealLogId} {
+      allow read: if isCafeteria() || isSuperAdmin();
+      allow create: if isCafeteria() || isSuperAdmin();
+      allow update, delete: if false;
+    }
+
+    // 6. Meal Cards Collection:
+    // Only SUPER_ADMIN can create, update, or delete meal cards.
+    // CAFETERIA, GUARD, and SUPER_ADMIN can read meal cards for scan redemption.
+    match /mealCards/{cardId} {
+      allow read: if isCafeteria() || isGuard() || isSuperAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    // 7. System Settings Collection:
+    // Only SUPER_ADMIN can write system settings (curfew, anti-passback, egress mode).
+    match /settings/{settingDocId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Student credential record with campus access privileges",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Student identification string" },
+        "fullName": { "type": "string", "description": "Student full legal name" },
+        "department": { "type": "string", "description": "Academic department" },
+        "level": { "type": "string", "description": "Academic year level" },
+        "photo": { "type": "string", "description": "Avatar badge color or image URL" },
+        "status": { "type": "string", "enum": ["ACTIVE", "SUSPENDED", "EXPIRED"], "description": "Access eligibility status" },
+        "curfewExempt": { "type": "boolean", "description": "Whether student is exempt from night curfew" },
+        "mealEligible": { "type": "boolean", "description": "Whether student is eligible for meal plans" },
+        "currentState": { "type": "string", "enum": ["IN", "OUT"], "description": "Current campus presence state" },
+        "email": { "type": "string", "description": "Student contact email" },
+        "phone": { "type": "string", "description": "Student emergency phone" }
+      },
+      "required": ["id", "fullName", "department", "level", "status", "curfewExempt", "mealEligible", "currentState"]
+    },
+    "ScanPoint": {
+      "title": "ScanPoint",
+      "description": "Turnstile barrier and gate scan point configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique scan point identifier" },
+        "name": { "type": "string", "description": "Scan point name" },
+        "code": { "type": "string", "description": "Short code label" },
+        "location": { "type": "string", "description": "Physical campus location" },
+        "type": { "type": "string", "enum": ["speed_gate", "flap_barrier", "turnstile", "MEAL"], "description": "Hardware barrier type" },
+        "allowedDirection": { "type": "string", "enum": ["ENTRY", "EXIT", "BIDIRECTIONAL"], "description": "Allowed passage direction" },
+        "status": { "type": "string", "enum": ["LOCKED", "UNLOCKED", "MAINTENANCE", "EMERGENCY_OPEN"], "description": "Operational status" },
+        "totalEntriesToday": { "type": "number", "description": "Count of inbound scans today" },
+        "totalExitsToday": { "type": "number", "description": "Count of outbound scans today" }
+      },
+      "required": ["id", "name", "code", "location", "type", "allowedDirection", "status"]
+    },
+    "ScanLog": {
+      "title": "ScanLog",
+      "description": "Gate access scan audit record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique log record ID" },
+        "timestamp": { "type": "string", "description": "ISO timestamp of transaction" },
+        "barcode": { "type": "string", "description": "Raw scanned barcode input" },
+        "studentId": { "type": "string", "description": "Matched student ID" },
+        "studentName": { "type": "string", "description": "Student full name" },
+        "department": { "type": "string", "description": "Department name" },
+        "gateId": { "type": "string", "description": "Gate scan point ID" },
+        "gateName": { "type": "string", "description": "Gate scan point name" },
+        "direction": { "type": "string", "enum": ["ENTRY", "EXIT"], "description": "Passage vector" },
+        "result": { "type": "string", "description": "Access verdict result" },
+        "message": { "type": "string", "description": "Verdict title message" },
+        "details": { "type": "string", "description": "Reason details" },
+        "operatorId": { "type": "string", "description": "Auth UID of on-duty operator" }
+      },
+      "required": ["id", "timestamp", "barcode", "gateId", "gateName", "direction", "result", "message"]
+    },
+    "MealLog": {
+      "title": "MealLog",
+      "description": "Dining cafeteria meal scan record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique meal log ID (studentId_date_period)" },
+        "timestamp": { "type": "string", "description": "ISO timestamp" },
+        "barcode": { "type": "string", "description": "Scanned barcode value" },
+        "studentId": { "type": "string", "description": "Student ID" },
+        "studentName": { "type": "string", "description": "Student full name" },
+        "mealType": { "type": "string", "description": "Breakfast, Lunch, or Dinner" },
+        "status": { "type": "string", "enum": ["GRANTED", "DENIED", "WARNING"], "description": "Meal transaction verdict" },
+        "reason": { "type": "string", "description": "Verdict reason description" },
+        "operatorId": { "type": "string", "description": "Operator user ID" }
+      },
+      "required": ["id", "timestamp", "barcode", "status", "reason"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Perimeter security and gate control policies",
+      "type": "object",
+      "properties": {
+        "antiPassback": { "type": "boolean", "description": "Enforce anti-passback" },
+        "curfewEnabled": { "type": "boolean", "description": "Enforce night curfew" },
+        "curfewStart": { "type": "string", "description": "Curfew start time" },
+        "curfewEnd": { "type": "string", "description": "Curfew end time" },
+        "gateRelockSeconds": { "type": "number", "description": "Barrier relock seconds" },
+        "soundEnabled": { "type": "boolean", "description": "Audio effects enabled" },
+        "emergencyEgressMode": { "type": "boolean", "description": "All gates unlocked" },
+        "selectedGateId": { "type": "string", "description": "Active default gate" },
+        "mealPeriods": { "type": "object", "description": "Editable meal periods for breakfast, lunch, and dinner" }
+      },
+      "required": ["antiPassback", "curfewEnabled", "gateRelockSeconds", "soundEnabled", "emergencyEgressMode"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authorized staff account with RBAC role",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "User UID" },
+        "name": { "type": "string", "description": "Operator name" },
+        "email": { "type": "string", "description": "User email address" },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN", "ADMIN", "GUARD", "CAFETERIA"], "description": "User access role" },
+        "badgeId": { "type": "string", "description": "Officer badge identifier" },
+        "assignedGateId": { "type": "string", "description": "Assigned gate ID" },
+        "status": { "type": "string", "enum": ["active", "offline", "deactivated"], "description": "Duty status" }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "MealCard": {
+      "title": "MealCard",
+      "description": "Physical student meal card record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Card document ID (e.g. MC-000123)" },
+        "cardNumber": { "type": "string", "description": "Barcode card number" },
+        "studentId": { "type": "string", "description": "Enrolled student ID" },
+        "status": { "type": "string", "enum": ["ACTIVE", "BLOCKED", "LOST"], "description": "Card status" },
+        "issuedAt": { "type": "string", "description": "Issuance ISO timestamp" },
+        "issuedBy": { "type": "string", "description": "Admin UID who issued card" },
+        "notes": { "type": "string", "description": "Administrative notes" }
+      },
+      "required": ["id", "cardNumber", "studentId", "status", "issuedAt"]
+    }
+  },
+  "firestore": {
+    "/students/{studentDocId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Collection of student credential records"
+    },
+    "/scanPoints/{pointId}": {
+      "schema": { "$ref": "#/entities/ScanPoint" },
+      "description": "Physical turnstile and speed gate lanes"
+    },
+    "/scanLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ScanLog" },
+      "description": "Gate access scan audit logs"
+    },
+    "/mealLogs/{mealLogId}": {
+      "schema": { "$ref": "#/entities/MealLog" },
+      "description": "Cafeteria meal access transaction records"
+    },
+    "/mealCards/{cardId}": {
+      "schema": { "$ref": "#/entities/MealCard" },
+      "description": "Student physical meal card credentials"
+    },
+    "/settings/{settingDocId}": {
+      "schema": { "$ref": "#/entities/SystemSettings" },
+      "description": "System operational configuration"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Authorized user profiles and roles"
+    }
+  }
+}
